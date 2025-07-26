@@ -57,22 +57,7 @@ interface IEscrowFactory {
 
     /* solhint-enable func-name-mixedcase */
 
-    /**
-     * @notice Creates a new escrow contract for taker on the destination chain.
-     * @dev The caller must send the safety deposit in the native token along with the function call
-     * and approve the destination token to be transferred to the created escrow.
-     * @param dstImmutables The immutables of the escrow contract that are used in deployment.
-     */
-    function createDstEscrow(
-        IBaseEscrow.Immutables calldata dstImmutables
-    ) external payable;
 
-    /**
-     * @notice Returns the deterministic address of the destination escrow based on the salt.
-     * @param immutables The immutable arguments used to compute salt for escrow deployment.
-     * @return The computed address of the escrow.
-     */
-    function addressOfEscrowDst(
-        IBaseEscrow.Immutables calldata immutables
-    ) external view returns (address);
+
+
 }
