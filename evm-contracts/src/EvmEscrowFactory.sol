@@ -120,7 +120,7 @@ contract EvmEscrowFactory is Ownable {
         );
 
         // Compute salt for deterministic address
-        bytes32 salt = deployImmutables.hash();
+        bytes32 salt = ImmutablesLib.hashMem(deployImmutables);
 
         // Create minimal proxy bytecode pointing to implementation
         bytes memory bytecode = abi.encodePacked(
@@ -181,7 +181,7 @@ contract EvmEscrowFactory is Ownable {
     function predictEscrowAddress(
         IBaseEscrow.Immutables calldata immutables
     ) external view returns (address) {
-        bytes32 salt = immutables.hash();
+        bytes32 salt = ImmutablesLib.hashMem(immutables);
 
         bytes memory bytecode = abi.encodePacked(
             hex"3d602d80600a3d3981f3363d3d373d3d3d363d73",

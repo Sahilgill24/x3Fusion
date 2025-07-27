@@ -39,28 +39,19 @@ contract EvmEscrow is Escrow {
         override
         onlyValidImmutables(immutables)
         onlyValidSecret(secret, immutables)
-        onlyAfter(immutables.timelocks.get(TimelocksLib.Stage.SrcWithdrawal))
-        onlyBefore(immutables.timelocks.get(TimelocksLib.Stage.SrcCancellation))
+        onlyAfter(immutables.timelocks.get(TimelocksLib.Stage.Withdrawal))
+        onlyBefore(immutables.timelocks.get(TimelocksLib.Stage.Cancellation))
     {
         // Check if caller is authorized
         bool isPublicPeriod = block.timestamp >=
-            immutables.timelocks.get(TimelocksLib.Stage.SrcPublicWithdrawal);
+            immutables.timelocks.get(TimelocksLib.Stage.PublicWithdrawal);
         if (!isPublicPeriod) {
             // Private period - only taker can withdraw
             if (msg.sender != immutables.taker.get()) revert InvalidCaller();
         }
         // In public period, anyone can withdraw with correct secret
 
-        address token = immutables.token.get();
-        address taker = immutables.taker.get();
-
-        // Transfer main amount to taker
-        _uniTransfer(token, taker, immutables.amount);
-
-        // Transfer safety deposit to caller (reward for withdrawal)
-        if (immutables.safetyDeposit > 0) {
-            _uniTransfer(token, msg.sender, immutables.safetyDeposit);
-        }
+        _withdraw(secret, immutables);
 
         emit EscrowWithdrawal(secret);
     }
@@ -77,7 +68,7 @@ contract EvmEscrow is Escrow {
         override
         onlyTaker(immutables)
         onlyValidImmutables(immutables)
-        onlyAfter(immutables.timelocks.get(TimelocksLib.Stage.SrcCancellation))
+        onlyAfter(immutables.timelocks.get(TimelocksLib.Stage.Cancellation))
     {
         address token = immutables.token.get();
         address maker = immutables.maker.get();
@@ -92,5 +83,29 @@ contract EvmEscrow is Escrow {
         }
 
         emit EscrowCancelled();
+    }
+
+    /**
+     * @dev Transfers ERC20 tokens to the target and native tokens to the caller.
+     * @param secret The secret that unlocks the escrow.
+     * @param immutables The immutable values used to deploy the clone contract.
+     */
+    function _withdraw(
+        bytes32 secret,
+        Immutables calldata immutables
+    )
+        internal
+        onlyValidImmutables(immutables)
+        onlyValidSecret(secret, immutables)
+    {
+        address token = immutables.token.get();
+        address taker = immutables.taker.get();
+        // Transfer main amount to taker
+        _uniTransfer(token, taker, immutables.amount);
+
+        // Transfer safety deposit to caller/maker
+        if (immutables.safetyDeposit > 0) {
+            _ethTransfer(msg.sender, immutables.safetyDeposit);
+        }
     }
 }

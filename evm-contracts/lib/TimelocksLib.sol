@@ -3,7 +3,7 @@
 pragma solidity ^0.8.20;
 
 /**
- * @dev Timelocks for the source and the destination chains plus the deployment timestamp.
+ * @dev Timelock for the EVM chain plus the deployment timestamp.
  * Timelocks store the number of seconds from the time the contract is deployed to the start of a specific period.
  * For illustrative purposes, it is possible to describe timelocks by two structures:
  * struct SrcTimelocks {
@@ -13,14 +13,8 @@ pragma solidity ^0.8.20;
  *     uint256 publicCancellation;
  * }
  *
- * struct DstTimelocks {
- *     uint256 withdrawal;
- *     uint256 publicWithdrawal;
- *     uint256 cancellation;
- * }
- *
- * withdrawal: Period when only the taker with a secret can withdraw tokens for taker (source chain) or maker (destination chain).
- * publicWithdrawal: Period when anyone with a secret can withdraw tokens for taker (source chain) or maker (destination chain).
+ * withdrawal: Period when only the taker with a secret can withdraw tokens for taker (source chain).
+ * publicWithdrawal: Period when anyone with a secret can withdraw tokens for taker (source chain).
  * cancellation: Period when escrow can only be cancelled by the taker.
  * publicCancellation: Period when escrow can be cancelled by anyone.
  *
@@ -33,13 +27,10 @@ type Timelocks is uint256;
  */
 library TimelocksLib {
     enum Stage {
-        SrcWithdrawal,
-        SrcPublicWithdrawal,
-        SrcCancellation,
-        SrcPublicCancellation,
-        DstWithdrawal,
-        DstPublicWithdrawal,
-        DstCancellation
+        Withdrawal,
+        PublicWithdrawal,
+        Cancellation,
+        PublicCancellation
     }
 
     uint256 private constant _DEPLOYED_AT_MASK =
