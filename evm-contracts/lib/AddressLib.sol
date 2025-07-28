@@ -4,7 +4,7 @@ pragma solidity 0.8.23;
 
 /**
  * @title Address type for 1inch contracts
- * @notice Utility library for Address type operations  
+ * @notice Utility library for Address type operations
  */
 
 type Address is uint256;
@@ -17,4 +17,4 @@ library AddressLib {
     function wrap(address addr) internal pure returns (Address) {
         return Address.wrap(uint256(uint160(addr)));
     }
-} 
+}
