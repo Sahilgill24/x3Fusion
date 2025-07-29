@@ -1913,6 +1913,7 @@ dependencies = [
 name = "near-contracts"
 version = "0.1.0"
 dependencies = [
+ "hex",
  "near-sdk",
  "near-workspaces",
  "serde",

@@ -1,0 +1,40 @@
+// file: escrow.jsligo
+namespace Escrow {
+    // Define the type for the immutable escrow parameters
+    type immutables = {
+        orderhash: string,
+        hashlock: bytes,
+        timelocks: bytes, // usually timestamps encoded as bytes
+
+        maker: address,
+        taker: address,
+        amount: nat,
+        safetyDeposit: nat,
+        token: address,
+    };
+    // Dummy storage for demonstration (not persistent)
+    type storage = immutables;
+    type map_type = big_map<address, tez>;
+    type return_type = [list<operation>, map_type];
+    // Example entrypoint for creating an order
+
+    @entry
+    const createOrder = (_: unit, store: map_type): return_type => {
+        const order: immutables = {
+            orderhash: "some_hash",
+            hashlock: Crypto.sha256("my-secret" as bytes), // use hash of secret
+            timelocks: ("1234567890" as bytes), // placeholder timestamp in bytes
+            maker: ("tz1-maker-address-1234" as address),
+            taker: ("tz1-taker-address-5678" as address),
+            amount: 100n,
+            safetyDeposit: 10n,
+            token: ("KT1-token-address-9999" as address)
+        };
+        return [list([]), order];
+    };
+    // Check if secret is valid for the given hashlock
+    const withdraw = (order: immutables, secret: bytes): bool => {
+        const secretHash = Crypto.sha256(secret);
+        return secretHash == order.hashlock;
+    };
+};
