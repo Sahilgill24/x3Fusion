@@ -1,11 +1,11 @@
-use near_sdk::borsh::{self, BorshDeserialize};
+use near_sdk::borsh;
 // NEAR Protocol HTLC Escrow for Fusion+ Cross-Chain Extension
 // Factory contract will be used to deploy this
 use near_sdk::json_types::U128;
 use near_sdk::{
     env, log, near, require,
     serde::{Deserialize, Serialize},
-    AccountId, NearToken, Promise,
+    AccountId, NearToken, PanicOnDefault, Promise,
 };
 
 mod immutables;
@@ -16,6 +16,7 @@ pub use timelocks::{TimelockStage, Timelocks};
 
 #[derive(Serialize, Deserialize)]
 #[near(contract_state)]
+#[derive(PanicOnDefault)]
 pub struct HTLCEscrow {
     // Immutable parameters
     pub immutables: EscrowImmutables,
@@ -31,11 +32,12 @@ pub struct HTLCEscrow {
     pub revealed_secret: Option<String>,
 }
 
-impl Default for HTLCEscrow {
-    fn default() -> Self {
-        panic!("hello gentlemen")
-    }
-}
+// impl Default for HTLCEscrow {
+//     fn default() -> Self {
+//         env::panic_str("HTLCEscrow should be initialized via new() method")
+//     }
+// }
+
 #[near]
 impl HTLCEscrow {
     #[init]
@@ -48,9 +50,10 @@ impl HTLCEscrow {
         amount: U128,
         safety_deposit: U128,
         withdrawal_timelock: u64,
+        public_withdrawal_timelock: u64,
         cancellation_timelock: u64,
     ) -> Self {
-        let deposited = env::attached_deposit().as_near();
+        let deposited = env::attached_deposit().as_yoctonear();
 
         // Create and validate immutables
         let immutables = EscrowImmutables::new(
@@ -67,7 +70,11 @@ impl HTLCEscrow {
         require!(deposited >= required_amount, "Insufficient deposit");
 
         // Create and validate timelocks
-        let timelocks = Timelocks::new(withdrawal_timelock, cancellation_timelock);
+        let timelocks = Timelocks::new(
+            withdrawal_timelock,
+            public_withdrawal_timelock,
+            cancellation_timelock,
+        );
 
         log!(
             "HTLC Escrow created: order_hash={}, amount={}, maker={}",
@@ -112,7 +119,7 @@ impl HTLCEscrow {
 
         // Transfer funds to maker
         Promise::new(self.immutables.maker.clone())
-            .transfer(NearToken::from_near(self.immutables.amount.0))
+            .transfer(NearToken::from_yoctonear(self.immutables.amount.0))
     }
 
     /// Cancel escrow and return funds (equivalent to cancel in Solidity)
@@ -134,7 +141,8 @@ impl HTLCEscrow {
         );
 
         // Refund to depositor
-        Promise::new(self.depositor.clone()).transfer(NearToken::from_near(self.deposited_amount.0))
+        Promise::new(self.depositor.clone())
+            .transfer(NearToken::from_yoctonear(self.deposited_amount.0))
     }
 
     /// View functions - like Solidity public variables
@@ -233,23 +241,5 @@ impl HTLCEscrow {
     /// Get time remaining until cancellation
     pub fn time_until_cancellation(&self) -> Option<u64> {
         self.timelocks.time_until_cancellation()
-    }
-
-    /// Emergency function for depositor to handle stuck funds (with timelock)
-    pub fn emergency_refund(&mut self) -> Promise {
-        require!(
-            env::predecessor_account_id() == self.depositor,
-            "Only depositor can emergency refund"
-        );
-
-        // Use timelocks module for emergency timelock check
-        self.timelocks.require_timelock(TimelockStage::Emergency);
-
-        log!(
-            "Emergency refund: order_hash={}",
-            self.immutables.order_hash
-        );
-
-        Promise::new(self.depositor.clone()).transfer(NearToken::from_near(self.deposited_amount.0))
     }
 }

@@ -5,41 +5,53 @@ use near_sdk::{
 };
 use serde::{Deserialize, Serialize};
 
-/// Timelock stages for escrow lifecycle
+/// Timelock stages for escrow lifecycle (matching Ethereum destination chain)
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum TimelockStage {
-    Withdrawal,
-    Cancellation,
-    Emergency,
+    Withdrawal,       // Private withdrawal period (only maker with secret)
+    PublicWithdrawal, // Public withdrawal period (anyone with secret)
+    Cancellation,     // Cancellation period (anyone can cancel)
 }
 
-/// Timelock configuration and utilities
+/// Timelock configuration and utilities (destination chain pattern)
 #[near(serializers = [json,borsh])]
 pub struct Timelocks {
-    pub withdrawal_timelock: u64,   // Timestamp when withdrawal is allowed
+    pub withdrawal_timelock: u64, // Timestamp when private withdrawal is allowed
+    pub public_withdrawal_timelock: u64, // Timestamp when public withdrawal is allowed
     pub cancellation_timelock: u64, // Timestamp when cancellation is allowed
-    pub created_at: u64,            // Contract creation timestamp
+    pub created_at: u64,          // Contract creation timestamp
 }
 
 impl Timelocks {
-    /// Create new timelocks with validation
-    pub fn new(withdrawal_timelock: u64, cancellation_timelock: u64) -> Self {
+    /// Create new timelocks with validation (destination chain pattern)
+    pub fn new(
+        withdrawal_timelock: u64,
+        public_withdrawal_timelock: u64,
+        cancellation_timelock: u64,
+    ) -> Self {
         let current_time = Self::get_current_timestamp();
 
         // Validate timelock sequence
-        Self::validate_timelock_sequence(current_time, withdrawal_timelock, cancellation_timelock);
+        Self::validate_timelock_sequence(
+            current_time,
+            withdrawal_timelock,
+            public_withdrawal_timelock,
+            cancellation_timelock,
+        );
 
         Self {
             withdrawal_timelock,
+            public_withdrawal_timelock,
             cancellation_timelock,
             created_at: current_time,
         }
     }
 
-    /// Validate timelock sequence and timing
+    /// Validate timelock sequence and timing for destination chain
     fn validate_timelock_sequence(
         current_time: u64,
         withdrawal_timelock: u64,
+        public_withdrawal_timelock: u64,
         cancellation_timelock: u64,
     ) {
         require!(
@@ -48,29 +60,40 @@ impl Timelocks {
         );
 
         require!(
-            cancellation_timelock > withdrawal_timelock,
-            "Cancellation timelock must be after withdrawal timelock"
+            public_withdrawal_timelock > withdrawal_timelock,
+            "Public withdrawal timelock must be after withdrawal timelock"
         );
 
-        // Ensure reasonable timelock periods
-        let min_withdrawal_delay = 3600; // 1 hour minimum
-        let max_timelock_period = 86400 * 30; // 30 days maximum
+        require!(
+            cancellation_timelock > public_withdrawal_timelock,
+            "Cancellation timelock must be after public withdrawal timelock"
+        );
+
+        // Ensure reasonable timelock periods for destination chain
+        let min_withdrawal_delay = 1800; // 30 minutes minimum
+        let max_timelock_period = 86400 * 7; // 7 days maximum for destination
 
         require!(
             withdrawal_timelock >= current_time + min_withdrawal_delay,
-            "Withdrawal timelock must be at least 1 hour in the future"
+            "Withdrawal timelock must be at least 30 minutes in the future"
         );
 
         require!(
             cancellation_timelock <= current_time + max_timelock_period,
-            "Cancellation timelock cannot be more than 30 days in the future"
+            "Cancellation timelock cannot be more than 7 days in the future"
         );
     }
 
-    /// Check if withdrawal is allowed at current time
+    /// Check if withdrawal is allowed at current time (private period)
     pub fn can_withdraw(&self) -> bool {
         let current_time = Self::get_current_timestamp();
         current_time >= self.withdrawal_timelock
+    }
+
+    /// Check if public withdrawal is allowed at current time
+    pub fn can_public_withdraw(&self) -> bool {
+        let current_time = Self::get_current_timestamp();
+        current_time >= self.public_withdrawal_timelock
     }
 
     /// Check if cancellation is allowed at current time
@@ -98,6 +121,16 @@ impl Timelocks {
             None
         } else {
             Some(self.withdrawal_timelock - current_time)
+        }
+    }
+
+    /// Get time remaining until public withdrawal is allowed
+    pub fn time_until_public_withdrawal(&self) -> Option<u64> {
+        let current_time = Self::get_current_timestamp();
+        if current_time >= self.public_withdrawal_timelock {
+            None
+        } else {
+            Some(self.public_withdrawal_timelock - current_time)
         }
     }
 
@@ -132,18 +165,18 @@ impl Timelocks {
                     Err("Withdrawal timelock not met")
                 }
             }
+            TimelockStage::PublicWithdrawal => {
+                if self.can_public_withdraw() {
+                    Ok(())
+                } else {
+                    Err("Public withdrawal timelock not met")
+                }
+            }
             TimelockStage::Cancellation => {
                 if self.can_cancel() {
                     Ok(())
                 } else {
                     Err("Cancellation timelock not met")
-                }
-            }
-            TimelockStage::Emergency => {
-                if self.can_emergency_refund() {
-                    Ok(())
-                } else {
-                    Err("Emergency timelock not met")
                 }
             }
         }
@@ -166,29 +199,35 @@ impl Timelocks {
                 "Waiting for withdrawal timelock ({}s remaining)",
                 self.withdrawal_timelock - current_time
             )
+        } else if current_time < self.public_withdrawal_timelock {
+            "Private withdrawal period active".to_string()
         } else if current_time < self.cancellation_timelock {
-            "Withdrawal period active".to_string()
+            "Public withdrawal period active".to_string()
         } else {
             "Cancellation period active".to_string()
         }
     }
 
-    /// Create timelocks with relative delays from current time
+    /// Create timelocks with relative delays from current time (destination chain pattern)
     pub fn create_with_delays(
         withdrawal_delay_seconds: u64,
+        public_withdrawal_delay_seconds: u64,
         cancellation_delay_seconds: u64,
     ) -> Self {
         let current_time = Self::get_current_timestamp();
         Self::new(
             current_time + withdrawal_delay_seconds,
+            current_time + public_withdrawal_delay_seconds,
             current_time + cancellation_delay_seconds,
         )
     }
 
-
-    pub fn create_standard() -> Self {
-        Self::create_with_delays(3600, 86400) // 1 hour, 24 hours
+    /// Create timelocks optimized for NEAR as destination chain in EVM->NEAR swaps
+    pub fn create_destination_chain() -> Self {
+        Self::create_with_delays(1800, 5400, 14400) // 30 min, 1.5 hours, 4 hours
     }
 
-
+    pub fn create_standard() -> Self {
+        Self::create_with_delays(3600, 7200, 86400) // 1 hour, 2 hours, 24 hours
+    }
 }

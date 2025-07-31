@@ -1,9 +1,8 @@
-use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
+use near_sdk::borsh;
 // Immutable data structures and validation for NEAR HTLC Escrow
 use near_sdk::json_types::U128;
 use near_sdk::{
     env, near, require,
-    serde::{Deserialize, Serialize},
     AccountId,
 };
 
@@ -37,9 +36,9 @@ impl EscrowImmutables {
         // Validate EVM address format
         Self::validate_evm_address(&taker_evm_address);
 
-        // Validate amounts
+        
         require!(amount.0 > 0, "Amount must be greater than 0");
-        require!(safety_deposit.0 >= 0, "Safety deposit must be non-negative");
+        
 
         Self {
             order_hash,
