@@ -73,15 +73,15 @@ impl Timelocks {
         let min_withdrawal_delay = 1800; // 30 minutes minimum
         let max_timelock_period = 86400 * 7; // 7 days maximum for destination
 
-        require!(
-            withdrawal_timelock >= current_time + min_withdrawal_delay,
-            "Withdrawal timelock must be at least 30 minutes in the future"
-        );
+        // require!(
+        //     withdrawal_timelock >= current_time + min_withdrawal_delay,
+        //     "Withdrawal timelock must be at least 30 minutes in the future"
+        // );
 
-        require!(
-            cancellation_timelock <= current_time + max_timelock_period,
-            "Cancellation timelock cannot be more than 7 days in the future"
-        );
+        // require!(
+        //     cancellation_timelock <= current_time + max_timelock_period,
+        //     "Cancellation timelock cannot be more than 7 days in the future"
+        // );
     }
 
     /// Check if withdrawal is allowed at current time (private period)

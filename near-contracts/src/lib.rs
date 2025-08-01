@@ -119,7 +119,7 @@ impl HTLCEscrow {
 
         // Transfer funds to maker
         Promise::new(self.immutables.maker.clone()).transfer(NearToken::from_yoctonear(
-            self.immutables.amount.0 + self.immutables.safety_deposit.0,
+            self.immutables.amount.0 ,
         ))
     }
 
