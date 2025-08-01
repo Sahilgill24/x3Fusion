@@ -24,8 +24,8 @@ pub struct HTLCEscrow {
     // Timelock configuration
     pub timelocks: Timelocks,
 
-    // Mutable state
     pub deposited_amount: U128,
+    // depositor aka the resolver that deposits in the src chain
     pub depositor: AccountId,
     pub is_withdrawn: bool,
     pub is_cancelled: bool,
@@ -105,6 +105,46 @@ impl HTLCEscrow {
 
         // Check timelock using timelocks module
         self.timelocks.require_timelock(TimelockStage::Withdrawal);
+
+        // Update state
+        self.is_withdrawn = true;
+        self.revealed_secret = Some(secret.clone());
+
+        log!(
+            "HTLC Withdrawal: order_hash={}, secret={}, taker_evm={}",
+            self.immutables.order_hash,
+            secret,
+            self.immutables.taker_evm_address
+        );
+
+        // Transfer funds to maker
+        Promise::new(self.immutables.maker.clone()).transfer(NearToken::from_yoctonear(
+            self.immutables.amount.0 + self.immutables.safety_deposit.0,
+        ))
+    }
+
+    /// withdrawing to a special address if required
+    /// helper function in the contract mostly
+    fn withdrawTo(&mut self, secret: String, address: AccountId) -> Promise {
+        require!(self.immutables.verify_secret(&secret), "Invalid secret");
+        self.is_withdrawn = true;
+        self.revealed_secret = Some(secret.clone());
+
+        Promise::new(address).transfer(NearToken::from_yoctonear(self.immutables.amount.0))
+    }
+
+    /// Public Withdrawal
+    /// anyone with the secret can call this function to unlock the funds to the maker
+    pub fn publicwithdraw(&mut self, secret: String) -> Promise {
+        require!(!self.is_withdrawn, "Already withdrawn");
+        require!(!self.is_cancelled, "Escrow cancelled");
+
+        // Verify secret matches hashlock using immutables
+        require!(self.immutables.verify_secret(&secret), "Invalid secret");
+
+        // Check timelock using timelocks module
+        self.timelocks
+            .require_timelock(TimelockStage::PublicWithdrawal);
 
         // Update state
         self.is_withdrawn = true;

@@ -224,10 +224,10 @@ impl Timelocks {
 
     /// Create timelocks optimized for NEAR as destination chain in EVM->NEAR swaps
     pub fn create_destination_chain() -> Self {
-        Self::create_with_delays(1800, 5400, 14400) // 30 min, 1.5 hours, 4 hours
+        Self::create_with_delays(18, 54, 144) // 30 min, 1.5 hours, 4 hours
     }
 
     pub fn create_standard() -> Self {
-        Self::create_with_delays(3600, 7200, 86400) // 1 hour, 2 hours, 24 hours
+        Self::create_with_delays(36, 72, 864) // 1 hour, 2 hours, 24 hours
     }
 }
