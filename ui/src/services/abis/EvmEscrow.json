@@ -1,0 +1,119 @@
+{
+    "abi": [
+        {
+            "type": "function",
+            "name": "withdraw",
+            "inputs": [
+                {
+                    "name": "secret",
+                    "type": "bytes32",
+                    "internalType": "bytes32"
+                },
+                {
+                    "name": "immutables",
+                    "type": "tuple",
+                    "internalType": "struct Immutables",
+                    "components": [
+                        {
+                            "name": "orderHash",
+                            "type": "bytes32",
+                            "internalType": "bytes32"
+                        },
+                        {
+                            "name": "hashlock",
+                            "type": "bytes32",
+                            "internalType": "bytes32"
+                        },
+                        {
+                            "name": "maker",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "taker",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "token",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "amount",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "safetyDeposit",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "timelocks",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        }
+                    ]
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "cancel",
+            "inputs": [
+                {
+                    "name": "immutables",
+                    "type": "tuple",
+                    "internalType": "struct Immutables",
+                    "components": [
+                        {
+                            "name": "orderHash",
+                            "type": "bytes32",
+                            "internalType": "bytes32"
+                        },
+                        {
+                            "name": "hashlock",
+                            "type": "bytes32",
+                            "internalType": "bytes32"
+                        },
+                        {
+                            "name": "maker",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "taker",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "token",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "amount",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "safetyDeposit",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "timelocks",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        }
+                    ]
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        }
+    ]
+}

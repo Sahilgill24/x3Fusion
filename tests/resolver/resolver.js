@@ -62,13 +62,6 @@ const order = {
     timelocks: timelocks // Properly packed timelock values
 };
 
-console.log("🔢 Timelock breakdown:");
-console.log("- Escrow creation time:", escrowCreationTime);
-console.log("- Withdrawal period:", dstWithdrawal, "seconds");
-console.log("- Public withdrawal:", dstPublicWithdrawal, "seconds");
-console.log("- Cancellation period:", dstCancellation, "seconds");
-console.log("- Packed timelocks:", timelocks.toString());
-console.log("- Packed timelocks (hex):", "0x" + timelocks.toString(16));
 
 
 async function deployescrow() {
@@ -83,16 +76,6 @@ async function deployescrow() {
             timelocks: timelocks// Simple timelock value for deployment
         };
 
-
-        console.log('Order Hash:', deploymentOrder.orderHash);
-        console.log('Hashlock:', deploymentOrder.hashlock);
-        console.log('Secret that produces this hashlock:', secretString);
-        console.log('Maker:', deploymentOrder.maker);
-        console.log('Taker:', deploymentOrder.taker);
-        console.log('Token:', deploymentOrder.token);
-        console.log('Amount:', ethers.formatEther(deploymentOrder.amount));
-        console.log('Safety Deposit:', ethers.formatEther(deploymentOrder.safetyDeposit));
-        console.log('Timelocks:', deploymentOrder.timelocks);
 
         // Calculate required ETH
         const isEthToken = deploymentOrder.token === '0x0000000000000000000000000000000000000000';

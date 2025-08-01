@@ -1,0 +1,18 @@
+{
+  "name": "near_trial",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "\\",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@near-js/accounts": "^2.2.4",
+    "@near-js/providers": "^2.2.4",
+    "@near-js/signers": "^2.2.4",
+    "@near-js/tokens": "^2.2.4"
+  }
+}

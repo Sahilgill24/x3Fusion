@@ -10,6 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@taquito/signer": "^22.0.0",
+    "@taquito/taquito": "^22.0.0",
+    "@taquito/utils": "^22.0.0",
+    "ethers": "^6.15.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
