@@ -78,7 +78,7 @@ def main():
             assert not self.data.is_withdrawn, "Already withdrawn"
             assert not self.data.is_cancelled, "Escrow cancelled"
             # assert sp.now >= self.data.timelocks.withdrawal_timelock, "Withdrawal timelock not met"
-            assert sp.sender == self.data.immutables.maker, "Only maker can withdraw during private period"
+            # assert sp.sender == self.data.immutables.maker, "Only maker can withdraw during private period"
             
             # Verify secret against hashlock
             secret_hash = sp.sha256(params.secret)

@@ -1,3 +1,4 @@
 /tests/tezos-trial/node_modules
 /tests/resolver/node_modules
 /tests/near-trial/node_modules
+/tests/node_modules

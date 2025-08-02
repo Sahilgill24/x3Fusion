@@ -3,11 +3,11 @@
 const fs = require('fs');
 const ethers = require('ethers');
 // Import the ABI of the EvmEscrowFactory contract
-// taker : 0x4f334de8BC98105a0856f219ab4474a4d44A0af3
+
 
 const crypto = require('crypto');
-const abi = require('./abi.json'); // Assuming abi.json contains the ABI of EvmEscrowFactory
-const escrowabi = require('./EvmEscrow.json'); // Assuming escrowabi.json contains the ABI of EvmEscrow
+const abi = require('./abi/abi.json'); // Assuming abi.json contains the ABI of EvmEscrowFactory
+const escrowabi = require('./abi/EvmEscrow.json'); // Assuming escrowabi.json contains the ABI of EvmEscrow
 
 
 const EvmEscrowFactoryAddress = '0x49ae5957c37f993667c676dcfad35cfAa9Fbc563';
@@ -16,6 +16,7 @@ const provider = new ethers.JsonRpcProvider(rpc);
 
 const factoryContract = new ethers.Contract(EvmEscrowFactoryAddress, abi.abi, provider);
 const signer = new ethers.Wallet('0x39d7e9850a20b12f20dc2476f274fe429f5c44ed54a151e93d49d91c19a1f426', provider);
+
 const signer2 = new ethers.Wallet('0xa7788f91928410e6ebd73c01457ed9e77123719ea98bd50b23d99c3b214a9482', provider);
 // struct Immutables {
 //     bytes32 orderHash;
@@ -131,13 +132,7 @@ async function deployescrow() {
         const parsedEvent = factoryContract.interface.parseLog(escrowCreatedEvent);
         const escrowAddress = parsedEvent.args[0];
 
-        console.log('=== DEPLOYMENT SUCCESSFUL ===');
-        console.log('Escrow deployed at:', escrowAddress);
-        console.log('Predicted address was:', predictedAddress);
-        console.log('Addresses match:', predictedAddress.toLowerCase() === escrowAddress.toLowerCase());
-        console.log('Transaction confirmed in block:', receipt.blockNumber);
-        console.log('Gas used:', receipt.gasUsed.toString());
-        console.log('View on Etherscan:', `https://sepolia.etherscan.io/tx/${tx.hash}`);
+
 
         // Verify deployment by checking escrow balance
         const escrowBalance = await provider.getBalance(escrowAddress);
@@ -487,39 +482,6 @@ async function createDeploymentDataFile(escrowAddress, deploymentTxHash) {
     }
 }
 
-async function debugEscrowState() {
-    try {
-        const escrowAddress = '0x726dECceB1439149A39717960146767BBfC17F52';
-
-        // Check if this address is actually an escrow from our factory
-        const isEscrow = await factoryContract.isDeployedEscrow(escrowAddress);
-        console.log('Is deployed escrow from factory:', isEscrow);
-
-        // Get the predicted address for our order to see if it matches
-        const predictedAddress = await factoryContract.predictEscrowAddress(order);
-        console.log('Predicted address for our order:', predictedAddress);
-        console.log('Addresses match:', predictedAddress.toLowerCase() === escrowAddress.toLowerCase());
-
-        // Check the balance of the escrow
-        const balance = await provider.getBalance(escrowAddress);
-        console.log('Escrow balance:', ethers.formatEther(balance), 'ETH');
-
-        // Check current timestamp vs withdrawal periods
-        const currentBlock = await provider.getBlock('latest');
-        console.log('Current timestamp:', currentBlock.timestamp);
-        console.log('Current time:', new Date(currentBlock.timestamp * 1000).toISOString());
-
-        return {
-            isEscrow,
-            predictedAddress,
-            balance: ethers.formatEther(balance),
-            currentTimestamp: currentBlock.timestamp
-        };
-    } catch (error) {
-        console.error('Error debugging escrow state:', error);
-        throw error;
-    }
-}
 
 // Main execution
 async function main() {
@@ -532,7 +494,7 @@ async function main() {
         // Uncomment the operation you want to perform:
 
         // 1. Deploy a new escrow
-        // await deployescrow();
+        await deployescrow();
 
         // 2. Get predicted escrow address
         // await getEscrowAddress();

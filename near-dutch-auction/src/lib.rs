@@ -1,13 +1,15 @@
+
+
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::collections::UnorderedMap;
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, log, near, require, AccountId, NearToken, PanicOnDefault};
 
+
 // I have added the order fill and dutch auction logic together here. 
 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
+#[near(serializers=[json,Borsh])]
 pub struct Order {
     pub salt: u64,
     pub maker: AccountId,
@@ -18,7 +20,7 @@ pub struct Order {
 }
 
 #[near(contract_state)]
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[derive(PanicOnDefault)]
 pub struct DutchAuctionCalculator {
     /// Track filled amounts for each order hash
     pub filled_amounts: UnorderedMap<String, U128>,
@@ -39,7 +41,7 @@ impl DutchAuctionCalculator {
         let end_time = times & 0xFFFFFFFFFFFFFFFF;
         let current_time = env::block_timestamp() / 1_000_000; // Convert to milliseconds
 
-        let now_clamped = std::cmp::max(start_time, std::cmp::min(end_time, current_time));
+        let now_clamped = std::cmp::max(start_time, std::cmp::min(end_time, current_time as u128));
 
         if now_clamped <= start_time {
             return start_price;
@@ -88,7 +90,7 @@ impl DutchAuctionCalculator {
         U128(order.making_amount.0 - order.filled_amount.0)
     }
 }
-}
+
 
 #[cfg(test)]
 mod tests {

@@ -1,7 +1,7 @@
 use near_sdk::serde::Serialize;
 use near_sdk::{env, log, near, AccountId, NearToken, Promise, PromiseError, PublicKey};
 
-use crate::{Contract, ContractExt, NEAR_PER_STORAGE, NO_DEPOSIT, TGAS};
+use crate::{Contract, ContractExt, NEAR_PER_STORAGE, TGAS};
 
 #[derive(Serialize)]
 #[serde(crate = "near_sdk::serde")]
