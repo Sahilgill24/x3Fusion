@@ -10,6 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@near-js/accounts": "^2.2.4",
+    "@near-js/providers": "^2.2.4",
+    "@near-js/signers": "^2.2.4",
+    "@near-js/tokens": "^2.2.4",
     "@taquito/signer": "^22.0.0",
     "@taquito/taquito": "^22.0.0",
     "@taquito/utils": "^22.0.0",
