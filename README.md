@@ -7,6 +7,21 @@
 
 ## Features
 
+These are the contract addresses for the relevant chains. 
+
+```plaintext
+
+Near Escrow Factory: escrowfac22.testnet
+Near Dutch Auction: Dutchauction22.testnet
+Tezos Escrow Factory: KT18g1YSPAy9dTehdPVaAfSuESvP3p27HeQs
+Tezos Escrow Ex: KT1D9qehRdgVzEv1FgPNESB1DnxdekSdNbHN
+EVM Escrow Factory: 0x49ae5957c37f993667c676dcfad35cfAa9Fbc563
+EVM Dutch Auction: 0xC3deF82aD7C16299b60C792B3c92D29DDB4e9485 (Calculator)
+EVM Order Filler: 0x4B4c97f5B98e22160d4D5582865a218308a084bA
+
+```
+
+
 <img src='./images/home.png' >
 
 
@@ -69,7 +84,7 @@ POST /withdraw/tezos      – Withdraw from Tezos escrow
 ```
 
 ## Future Enhancements
--- ************Merkle Tree Secret Resolution**: Implement a Merkle-tree-of-secrets scheme to allow efficient, secure partial fills without exposing all preimages at once. Participants can prove knowledge of specific leaf preimages, preserving confidentiality and enabling granular withdrawals.
+-- **Merkle Tree Secret Resolution**: Implement a Merkle-tree-of-secrets scheme to allow efficient, secure partial fills without exposing all preimages at once. Participants can prove knowledge of specific leaf preimages, preserving confidentiality and enabling granular withdrawals.
 
 -- **Multi-Hop Swaps**: Extend resolver logic to coordinate atomic swaps across more than two chains in a single transaction flow.
 

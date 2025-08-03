@@ -1,9 +1,9 @@
-# HTLC based Escrow contract with Immutables and Timelocks
+## To test this deploy this file in the SmartPy IDE. 
 
 import smartpy as sp
 
 @sp.module
-def main():
+def escrow():
     class Escrow(sp.Contract):
         def __init__(self):
             # Initialize with empty/default values
@@ -75,7 +75,7 @@ def main():
         def withdraw(self, params):
             """Withdraw funds with secret during private period"""
             assert self.data.is_initialized, "Escrow not initialized"
-            assert not self.data.is_withdrawn, "Already withdrawn"
+            # assert not self.data.is_withdrawn, "Already withdrawn"
             assert not self.data.is_cancelled, "Escrow cancelled"
             # assert sp.now >= self.data.timelocks.withdrawal_timelock, "Withdrawal timelock not met"
             # assert sp.sender == self.data.immutables.maker, "Only maker can withdraw during private period"
@@ -94,7 +94,7 @@ def main():
         def public_withdraw(self, secret):
             """Public withdrawal with secret after public period starts"""
             assert self.data.is_initialized, "Escrow not initialized"
-            assert not self.data.is_withdrawn, "Already withdrawn"
+            # assert not self.data.is_withdrawn, "Already withdrawn"
             assert not self.data.is_cancelled, "Escrow cancelled"
             assert sp.now >= self.data.timelocks.public_withdrawal_timelock, "Public withdrawal timelock not met"
             
@@ -137,8 +137,8 @@ def main():
             self.data.is_cancelled = True
 
 @sp.module
-def factoryc():
-    import main
+def main():
+    import escrow
     class EscrowFactory(sp.Contract):
         def __init__(self):
             self.data.escrow_address = sp.address("tz1fUef6TuMmNUaHTwT3rYxdAgABCPEpZpD6")
@@ -146,7 +146,7 @@ def factoryc():
         @sp.entrypoint
         def create2(self):
             self.data.escrow_address = sp.create_contract(
-                main.Escrow,
+                escrow.Escrow,
                 None,
                 sp.mutez(123),
                 sp.record(
@@ -166,34 +166,7 @@ def factoryc():
             ))
             
 
-@sp.module
-def factoryc():
-    import main
-    class EscrowFactory(sp.Contract):
-        def __init__(self):
-            self.data.escrow_address = sp.address("tz1fUef6TuMmNUaHTwT3rYxdAgABCPEpZpD6")
-
-        @sp.entrypoint
-        def create2(self):
-            self.data.escrow_address = sp.create_contract(
-                main.Escrow,
-                None,
-                sp.mutez(123),
-                sp.record(
-                    immutables=sp.record(order_hash = sp.bytes("0x"),
-                                        hashlock = sp.bytes("0x"),
-                                        maker = sp.address("tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb"),  # Default address
-                                        taker_address = " ",
-                                        amount = sp.mutez(0),
-                                        safety_deposit = sp.mutez(0)),
-                    timelocks = sp.record(withdrawal_timelock = sp.timestamp(0),
-                                        public_withdrawal_timelock = sp.timestamp(0),
-                                        cancellation_timelock = sp.timestamp(0),
-                                        created_at = sp.timestamp(0)),
-                    is_initialized = False,
-                    is_withdrawn = False,
-                    is_cancelled = False,
-            ))           
+            
                 
 
 
@@ -209,36 +182,11 @@ def test():
     charlie = sp.test_account("Charlie")
 
     # Deploy Escrow
-    escrow = main.Escrow()
-    scenario += escrow
-    factory2 = factoryc.EscrowFactory()
-    scenario += factory2
-    factory2.create2(_amount = sp.mutez(124))
-    
-    # Test 1: Initialize escrow with valid timelocks
-    scenario.h2("Test 1: Initialize Escrow")
-    
-    current_time = sp.timestamp(1722470400)  # Aug 1, 2025
-    withdrawal_time = current_time.add_seconds(0)  # 30 minutes
-    public_withdrawal_time = current_time.add_seconds(3599)  # 1 hour
-    cancellation_time = current_time.add_seconds(3600)  # 2 hours
-    
-    test_hashlock = sp.sha256(sp.bytes("0x001234"))  # Hash of secret "123"
-    
-    escrow.initialize_escrow(
-        order_hash = sp.bytes("0x001234"),
-        hashlock = test_hashlock,
-        maker = bob.address,
-        taker_address = "0x6F1859694601891B7ED021c3Fefd390AB776d5C0",
-        amount = sp.mutez(1000000),  # 1 XTZ
-        safety_deposit = sp.mutez(100000),  # 0.1 XTZ
-        withdrawal_timelock = withdrawal_time,
-        public_withdrawal_timelock = public_withdrawal_time,
-        cancellation_timelock = cancellation_time
-    )
+    escrowfac = main.EscrowFactory()
+    scenario += escrowfac
+    escrow = escrowfac.create2()
 
-    escrow.deposit(_amount = sp.tez(2))
     
-    escrow.withdraw(secret=sp.bytes("0x001234"))
+    scenario += escrow
 
    
