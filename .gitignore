@@ -1,4 +1,5 @@
 /resolver/tezos-trial/node_modules
-/resolver/resolver/node_modules
+/resolver/evm-trial/node_modules
 /resolver/near-trial/node_modules
 /resolver/node_modules
+/near-dutch-auction/target

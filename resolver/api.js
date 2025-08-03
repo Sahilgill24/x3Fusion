@@ -1,3 +1,7 @@
+// This is an API endpoint for managing the cross-chain escrows and all the stuff. 
+// 
+
+
 const express = require('express');
 const cors = require('cors');
 const { ethers } = require('ethers');
