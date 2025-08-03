@@ -1,4 +1,4 @@
-# Dutch Auction Calculator for Tezos with Partial Fill Support
+# Supports Partial fills. 
 
 import smartpy as sp
 
@@ -9,7 +9,7 @@ def main():
         salt=sp.nat,
         maker=sp.address,
         receiver=sp.address, 
-        maker_asset=sp.string,  # "tez" for native token, or token contract address
+        maker_asset=sp.string, 
         making_amount=sp.mutez,
         filled_amount=sp.mutez
     )

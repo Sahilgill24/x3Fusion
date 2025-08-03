@@ -166,7 +166,34 @@ def factoryc():
             ))
             
 
-            
+@sp.module
+def factoryc():
+    import main
+    class EscrowFactory(sp.Contract):
+        def __init__(self):
+            self.data.escrow_address = sp.address("tz1fUef6TuMmNUaHTwT3rYxdAgABCPEpZpD6")
+
+        @sp.entrypoint
+        def create2(self):
+            self.data.escrow_address = sp.create_contract(
+                main.Escrow,
+                None,
+                sp.mutez(123),
+                sp.record(
+                    immutables=sp.record(order_hash = sp.bytes("0x"),
+                                        hashlock = sp.bytes("0x"),
+                                        maker = sp.address("tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb"),  # Default address
+                                        taker_address = " ",
+                                        amount = sp.mutez(0),
+                                        safety_deposit = sp.mutez(0)),
+                    timelocks = sp.record(withdrawal_timelock = sp.timestamp(0),
+                                        public_withdrawal_timelock = sp.timestamp(0),
+                                        cancellation_timelock = sp.timestamp(0),
+                                        created_at = sp.timestamp(0)),
+                    is_initialized = False,
+                    is_withdrawn = False,
+                    is_cancelled = False,
+            ))           
                 
 
 
