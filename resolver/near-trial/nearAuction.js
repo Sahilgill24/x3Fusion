@@ -6,11 +6,11 @@ import { KeyPairSigner } from "@near-js/signers";
 import { parseNearAmount } from "@near-js/utils";
 
 
-const privatekey = 'ed25519:4uWo16xLoUqYQ5oN4FhAqXYvxxt3haL86mVWudp7W1mw23m3FykA7gWCrSsnkYhceyJcsjuTdKNDR3K7EfGgtuMG'
+const privatekey = 'ed25519:3hHwBa3fqM34dRhUbnQgdFbpQTKGzh5sAK3doKaQaon1uNvjH1bD744QUw9Ek9M2qBZoKmt2Ddi14WAPLoYcuxhM'
 const signer = KeyPairSigner.fromSecretKey(privatekey);
 
 const provider = new JsonRpcProvider({ url: "https://test.rpc.fastnear.com" })
-const account = new Account("trial3.testnet", provider, signer);
+const account = new Account("trial45.testnet", provider, signer);
 
 // Create a unique salt (typically a random number or timestamp)
 const salt = Math.floor(Math.random() * 1000000);
@@ -18,7 +18,7 @@ const salt = Math.floor(Math.random() * 1000000);
 // Create order - maker will be the current account
 const order = {
     salt: salt,
-    maker: 'trial3.testnet',
+    maker: 'trial45.testnet',
     maker_asset: 'NEAR',
     making_amount: parseNearAmount('1')  // 1 NEAR
 };
@@ -84,8 +84,42 @@ async function getPriceInfo() {
     }
 }
 
+
+// Function to fill an order at the current auction price
+async function fillOrder(takerAccountId) {
+    try {
+        // Default taker if not provided
+        const taker = takerAccountId || 'taker.testnet';
+
+        console.log(`Filling order as ${taker}...`);
+
+        // Call the fill_order function on the contract
+        const filledOrderInfo = await account.callFunction({
+            contractId: 'dutchauction22.testnet',
+            methodName: 'fill_order',
+            args: {
+                order,
+                taker,
+                start_time: startTime,
+                end_time: endTime,
+                start_price: startPrice,
+                end_price: endPrice
+            }
+        });
+
+        console.log("Order filled successfully!");
+        console.log("Filled order details:", filledOrderInfo);
+        console.log("Fill price:", filledOrderInfo.fill_price);
+        console.log("Order hash:", filledOrderInfo.order_hash);
+
+        return filledOrderInfo;
+    } catch (error) {
+        console.error("Error filling order:", error);
+        throw error;
+    }
+}
 // Main function to demonstrate the full flow
-async function runDutchAuction() {
+async function runDutchAuction(shouldFill = false, takerAccountId = null) {
     try {
         // 1. Create the order and get its hash
         const orderHash = await createOrder();
@@ -94,12 +128,17 @@ async function runDutchAuction() {
         // 2. Get the current price information
         const priceInfo = await getPriceInfo();
 
-        // 3. In a real implementation, you would save this order hash
-        // for verification when the order is filled from the other chain
-        console.log("Dutch auction is ready for cross-chain fulfillment");
-        console.log("Store this hash for verification:", orderHash);
+        // 3. If shouldFill is true, fill the order
+        let filledOrderInfo = null;
+        if (shouldFill) {
+            filledOrderInfo = await fillOrder(takerAccountId);
+            console.log("Order has been filled!");
+        } else {
+            console.log("Dutch auction is ready for cross-chain fulfillment");
+            console.log("Store this hash for verification:", orderHash);
+        }
 
-        return { orderHash, priceInfo };
+        return { orderHash, priceInfo, filledOrderInfo };
     } catch (error) {
         console.error("Dutch auction execution failed:", error);
         throw error;
@@ -107,4 +146,6 @@ async function runDutchAuction() {
 }
 
 // Execute the auction flow
-runDutchAuction().catch(console.error);
+// Set first parameter to true to automatically fill the order
+// Second parameter is optional taker account ID
+runDutchAuction(false).catch(console.error);

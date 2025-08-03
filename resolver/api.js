@@ -1,5 +1,5 @@
 // This is an API endpoint for managing the cross-chain escrows and all the stuff. 
-// 
+// This API is being managed by the resolver and the relayer on the frontend to complete the call chain swap. 
 
 
 const express = require('express');
@@ -10,6 +10,7 @@ const { JsonRpcProvider } = require("@near-js/providers");
 const { KeyPairSigner } = require("@near-js/signers");
 const { TezosToolkit } = require("@taquito/taquito");
 const { InMemorySigner } = require('@taquito/signer');
+const { parseNearAmount } = require("@near-js/utils");
 const { stringToBytes } = require("@taquito/utils");
 const fs = require('fs');
 const path = require('path');
@@ -22,8 +23,8 @@ app.use(cors());
 app.use(express.json());
 
 // Load ABIs
-const evmFactoryAbi = require('./resolver/abi/abi.json');
-const evmEscrowAbi = require('./resolver/abi/EvmEscrow.json');
+const evmFactoryAbi = require('./evm-trial/abi/abi.json');
+const evmEscrowAbi = require('./evm-trial/abi/EvmEscrow.json');
 
 // EVM Configuration
 const EVM_CONFIG = {
@@ -57,6 +58,108 @@ const nearAccount = new Account(NEAR_CONFIG.accountId, nearProvider, nearSigner)
 
 const tezos = new TezosToolkit(TEZOS_CONFIG.rpc);
 
+
+
+app.post('/auction/start', async (req, res) => {
+
+
+    const { maker } = req.body;
+    const salt = Math.floor(Math.random() * 1000000);
+
+    // Create order - maker will be the current account
+    const order = {
+        salt: salt,
+        maker: maker || 'trial45.testnet',
+        maker_asset: 'NEAR',
+        making_amount: parseNearAmount('1')  // 1 NEAR
+    };
+
+    // Define auction time parameters
+    // Start now and run for 1 hour
+    const now = Math.floor(Date.now());
+    const startTime = now;  // Start time in ms (from now)
+    const endTime = now + 3600000;  // End time in ms (1 hour from start)
+
+    // Set auction prices
+    const startPrice = parseNearAmount('10');  // 10 NEAR
+    const endPrice = parseNearAmount('8');     // 8 NEAR
+
+
+    // Function to get current price info for an order
+    async function getPriceInfo() {
+        try {
+            const priceInfo = await nearAccount.callFunction({
+                contractId: 'dutchauction22.testnet',
+                methodName: 'get_price_info',
+                args: {
+                    order,
+                    start_time: startTime,
+                    end_time: endTime,
+                    start_price: startPrice,
+                    end_price: endPrice
+                }
+            });
+
+            console.log("Price Info:", priceInfo);
+            console.log("Current Price:", priceInfo.current_price);
+            console.log("Time Elapsed:", priceInfo.time_elapsed_percent + "%");
+            console.log("Is Active:", priceInfo.is_active);
+
+            return priceInfo;
+        } catch (error) {
+            console.error("Error getting price info:", error);
+            throw error;
+        }
+    }
+
+
+    // 2. Get the current price information
+    const priceInfo = await getPriceInfo();
+
+    // 3. In a real implementation, you would save this order hash
+    // for verification when the order is filled from the other chain
+    console.log("Dutch auction is ready for cross-chain fulfillment");
+
+    fs.writeFileSync(path.join(__dirname, 'orderDetails.json'), JSON.stringify({ priceInfo, startTime, endTime, startPrice, endPrice, order }, null, 2));
+    res.json({ priceInfo, startTime, endTime, startPrice, endPrice, order })
+
+});
+
+
+app.post('/auction/fillOrder', async (req, res) => {
+
+
+    const { taker, startTime, endTime, startPrice, endPrice, order } = req.body;
+
+
+    const orderpath = path.join(__dirname, 'orderDetails.json');
+    const orderDetails = fs.existsSync(orderpath) ? JSON.parse(fs.readFileSync(orderpath)) : null;
+
+    // Define auction time parameters
+    // Start now and run for 1 hour
+    const now = Math.floor(Date.now());
+
+
+    // The resolver fills the order here
+    const filledOrderInfo = await nearAccount.callFunction({
+        contractId: 'dutchauction22.testnet',
+        methodName: 'fill_order',
+        args: {
+            order: order || orderDetails.order,
+            taker,
+            start_time: startTime || orderDetails.startTime,
+            end_time: endTime || orderDetails.endTime,
+            start_price: startPrice || orderDetails.startPrice,
+            end_price: endPrice || orderDetails.endPrice
+        }
+    });
+
+    console.log("Fill price:", filledOrderInfo.fill_price);
+    console.log("Order hash:", filledOrderInfo.order_hash);
+
+    res.json({ filledOrderInfo })
+
+});
 
 
 // working fine
@@ -574,6 +677,9 @@ const startServer = () => {
     const server = app.listen(PORT, () => {
         console.log(`Cross-chain escrow deployment API running on port ${PORT}`);
         console.log('Available endpoints:');
+        console.log('  Auction:');
+        console.log('    POST /auction/start - Create a new auction order');
+        console.log('    POST /auction/fillOrder - Fill an auction order');
         console.log('  Deployment:');
         console.log('    POST /deploy/evm - Deploy EVM escrow contract');
         console.log('    POST /deploy/near - Deploy NEAR escrow contract');

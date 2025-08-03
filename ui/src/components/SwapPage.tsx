@@ -11,6 +11,10 @@ interface SwapPageProps {
     onNavigateHome: () => void;
 }
 
+// ** RESOLVER & RELAYER ** 
+// The combination of the function calls in this file acts as both the resolver and the relayer. 
+
+
 const API_URL = 'http://localhost:3000'
 
 interface Token {
@@ -40,6 +44,7 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
     const [showReceiveDropdown, setShowReceiveDropdown] = useState(false);
     const [isSwapping, setIsSwapping] = useState(false);
     const [escrowdeployed, setEscrowDeployed] = useState(false);
+    const [orderHash, setOrderHash] = useState('');
 
     const minAmountReceived = 0.01245257;
 
@@ -47,7 +52,7 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
     const getExchangeRate = (from: string, to: string) => {
         const rates: { [key: string]: number } = {
             'ETH-NEAR': 1375,
-            'ETH-TEZOS': 850,
+            'ETH-TEZOS': 5000,
             'NEAR-ETH': 1 / 1375,
             'NEAR-TEZOS': 0.62,
             'TEZOS-ETH': 1 / 850,
@@ -99,16 +104,17 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
     };
 
     const deployEvmEscrow = async (secret: string): Promise<string> => {
-        const { data } = await axios.post(`${API_URL}/deploy/evm`, { secret });
+        const { data } = await axios.post(`${API_URL}/deploy/evm`, { secret, orderHash });
         setEvmescrowaddress(data.escrowAddress);
         return data.escrowAddress;
     };
 
     const deployNearEscrow = async (secret: string): Promise<string> => {
         const { data } = await axios.post(`${API_URL}/deploy/near`, {
-            uniqueName: 'x3fusionbackup5',
+            orderHash,
+            uniqueName: 'x3fusiondemo22',
             secret,
-            maker: destaddress
+            maker: 'trial45.testnet'
         });
         setNearContractId(data.contractName);
         return data.contractName;
@@ -117,6 +123,7 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
     const deployTezosEscrow = async (secret: String) => {
         const resp = await axios.post(`${API_URL}/deploy/tezos`, {
             secret: secret,
+            orderHash,
         })
 
         console.log(resp.data);
@@ -143,6 +150,28 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
         console.log(resp.data);
     }
 
+    const beginAuction = async () => {
+        // This is the function to start the Auction on Near. 
+        const resp = await axios.post(`${API_URL}/auction/start`, {
+            maker: 'trial45.testnet',
+            // Include other necessary auction parameters
+        });
+
+        console.log('Auction started succesfully')
+        const result = resp.data;
+        console.log('Auction started:', 'Price', result.priceInfo, 'Start Time', result.startTime, 'End Time', result.endTime);
+        // Handle auction response as needed
+        await delay(5000)
+        const fillOrder = await axios.post(`${API_URL}/auction/fillOrder`, {
+            taker: 'othercap7803.testnet'
+        });
+
+        console.log('Order filled successfully:', fillOrder.data);
+        setOrderHash(fillOrder.data.filledOrderInfo.order_hash);
+        console.log('Order Hash:', fillOrder.data.filledOrderInfo.order_hash);
+        // You can store the order hash in state or use it as needed
+    }
+
     const withdrawTezosEscrow = async (secret: String) => {
         const resp = await axios.post(`${API_URL}/withdraw/tezos`, {
             secret: secret,
@@ -152,21 +181,21 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
         console.log(resp.data);
     }
 
-    async function verifyescrowaddresses() {
-        if (nearcontractId === '' || evmescrowaddress === '') {
-            console.log('Escrow addresses not set');
-            return;
-        }
-    }
+    // async function verifyescrowaddresses() {
+    //     if (nearcontractId === '' || evmescrowaddress === '') {
+    //         console.log('Escrow addresses not set');
+    //         return;
+    //     }
+    // }
 
 
     async function EvmToNearSwap() {
-        await deployEvmEscrow(secret);
+        const escaddress = await deployEvmEscrow(secret);
 
 
-        console.log('EVM Escrow deployed Successfully:', evmescrowaddress);
-        await deployNearEscrow(secret);
-        console.log('Near Escrow deployed Successfully:', nearcontractId);
+        console.log('EVM Escrow deployed Successfully:', escaddress);
+        const contractId = await deployNearEscrow(secret);
+        console.log('Near Escrow deployed Successfully:', contractId);
         // 10 seconds for Near finality
 
         console.log('Withdrawing from Near and EVM Escrows');
@@ -188,15 +217,15 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
 
     async function EvmToTezosSwap() {
         console.log('Starting EVM to Tezos swap...');
-
+        //console.log('Auction started successfully');
         // Deploy EVM Escrow
-        await deployEvmEscrow(secret);
-        console.log('EVM Escrow deployed Successfully:', evmescrowaddress);
+        const esc = await deployEvmEscrow(secret);
+        console.log('EVM Escrow deployed Successfully:', esc);
 
         // Deploy Tezos Escrow
         await deployTezosEscrow(secret);
         console.log('Tezos Escrow deployed Successfully');
-
+        setEscrowDeployed(true);
         // Wait for finality (EVM has faster finality than Tezos)
 
     }
@@ -230,7 +259,8 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
                 await EvmToTezosSwap();
             } else if (fromChain === 'NEAR' && toChain === 'ETH') {
                 // Reverse of EVM to Near - you can implement this later
-                console.log('Near to EVM swap - to be implemented');
+                await beginAuction()
+                await EvmToNearSwap()
             } else if (fromChain === 'TEZOS' && toChain === 'ETH') {
                 // Reverse of EVM to Tezos - you can implement this later
                 console.log('Tezos to EVM swap - to be implemented');
@@ -254,6 +284,10 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
             await withdrawlbegin();
         } else if (fromChain === 'ETH' && toChain === 'TEZOS') {
             await withdrawlbegin2();
+        }
+        else if (fromChain === 'NEAR' && toChain === 'ETH') {
+            // Reverse of EVM to Near - you can implement this later
+            await withdrawlbegin();
         }
     }
     const handlePayAmountChange = (value: string) => {
@@ -287,7 +321,7 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
                         <div className="section-header">
                             <span className="section-label">Pay</span>
                             <span className="balance">
-                                👛 {isConnected && payToken.symbol === 'ETH' ? balance : '49.966986'} {payToken.symbol} <span className="max-button">Max</span>
+                                {isConnected && payToken.symbol === 'ETH' ? balance : '49.966986'} {payToken.symbol} <span className="max-button">Max</span>
                             </span>
                         </div>
                         <div className="input-row">
@@ -366,7 +400,7 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
                         <div className="section-header">
                             <span className="section-label">Receive</span>
                             <span className="balance">
-                                👛 0.03239813 {receiveToken.symbol}
+                                {receiveToken.symbol}
                             </span>
                         </div>
                         <div className="input-row">
@@ -442,7 +476,7 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
                     <div className="secret-form">
                         <div className="secret-header">
                             <span className="secret-label">Secret</span>
-                            <span className="secret-description">Enter your secret for secure swap</span>
+                            <span className="secret-description">Enter any secret for secure swap or generate randomly</span>
                         </div>
                         <div className="secret-input-container">
                             <input
@@ -457,7 +491,7 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
                     <div className="dest-address-form">
                         <div className="secret-header">
                             <span className="secret-label">Destination Address</span>
-                            <span className="secret-description">Enter the destination address for the swap</span>
+                            <span className="secret-description">Enter the destination chain address for the swap</span>
                         </div>
                         <div className="secret-input-container">
                             <input
@@ -467,6 +501,21 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
                                 value={destaddress}
                                 onChange={(e) => setDestAddress(e.target.value)}
                             />
+                        </div>
+                        <div>
+                            <div className="secret-header">
+                                <span className="secret-label">Order Hash</span>
+
+                            </div>
+                            <div className="secret-input-container">
+                                <input
+                                    type="text"
+                                    className="secret-input"
+                                    placeholder="Auto generated order Hash after Auction"
+                                    value={orderHash}
+                                    readOnly
+                                />
+                            </div>
                         </div>
                     </div>
 

@@ -38,7 +38,7 @@ const Homepage: FC<HomepageProps> = ({ onNavigateToSwap }) => {
                             1inch Fusion+ for  <span className="gradient-text">Near and Tezos</span>
                         </h1>
                         <p className="hero-description">
-                            Extending Fusion+ technology to Near and Tezos for seamless cross-chain swaps, optimal routing, and lightning-fast execution across multiple blockchains.
+                            Extending Fusion+ technology to Near and Tezos for seamless cross-chain swaps. 
                         </p>
                         <div className="hero-actions">
                             <button className="cta-primary" onClick={onNavigateToSwap}>

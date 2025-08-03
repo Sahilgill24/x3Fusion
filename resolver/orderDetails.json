@@ -1,0 +1,18 @@
+{
+  "priceInfo": {
+    "current_price": "9998236111111111111111111",
+    "order_hash": "507912b83d9238aefdc04a41a0c7ffb0e8cdafc490ab45522b9bbebf2253e343",
+    "time_elapsed_percent": 0,
+    "is_active": true
+  },
+  "startTime": 1754229705908,
+  "endTime": 1754233305908,
+  "startPrice": "10000000000000000000000000",
+  "endPrice": "8000000000000000000000000",
+  "order": {
+    "salt": 884107,
+    "maker": "trial45.testnet",
+    "maker_asset": "NEAR",
+    "making_amount": "1000000000000000000000000"
+  }
+}

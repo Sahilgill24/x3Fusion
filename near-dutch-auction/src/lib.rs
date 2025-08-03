@@ -1,18 +1,15 @@
 // I have followed the same implementation as the DutchAuctionCalculator in the Limit-Order-Protocol.
+// This contract not only implements the DutchAuctionCalculator but also the Order filler.
+
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::U128;
+use near_sdk::require;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, near, AccountId, PanicOnDefault};
 
-/// Order
-#[near(serializers = [json,Borsh])]
+mod order;
 
-pub struct Order {
-    pub salt: u64,
-    pub maker: AccountId,
-    pub maker_asset: String,
-    pub making_amount: U128,
-}
+pub use order::Order;
 
 /// Response with price and order information
 #[near(serializers = [json,Borsh])]
@@ -26,6 +23,26 @@ pub struct PriceInfo {
     pub time_elapsed_percent: u8,
     /// Whether the auction is still active
     pub is_active: bool,
+}
+
+/// Information about a filled order
+#[near(serializers = [json,Borsh])]
+
+pub struct FilledOrderInfo {
+    /// Hash of the order for tracking
+    pub order_hash: String,
+    /// Account that created the auction
+    pub maker: AccountId,
+    /// Account that filled the order
+    pub taker: AccountId,
+    /// Asset being sold
+    pub maker_asset: String,
+    /// Amount of asset being sold
+    pub making_amount: U128,
+    /// Price at which the order was filled
+    pub fill_price: U128,
+    /// Timestamp when the order was filled
+    pub fill_time: U128,
 }
 
 #[near(contract_state)]
@@ -75,27 +92,8 @@ impl DutchAuctionCalculator {
         U128(price)
     }
 
-    /// Generate a hash for an order
-    pub fn hash_order(&self, order: &Order) -> String {
-        // Combine order fields into a single string for hashing
-        let order_data = format!(
-            "{}:{}:{}:{}",
-            order.salt, order.maker, order.maker_asset, order.making_amount.0
-        );
-
-        // Create hash using NEAR's built-in hash function
-        let hash_bytes = env::sha256(order_data.as_bytes());
-
-        // Convert binary hash to hexadecimal string
-        let mut hex_hash = String::with_capacity(hash_bytes.len() * 2);
-        for byte in hash_bytes.iter() {
-            hex_hash.push_str(&format!("{:02x}", byte));
-        }
-
-        hex_hash
-    }
-
     /// Get current price and order information for a Dutch auction order
+    /// not a public function
     pub fn get_price_info(
         &self,
         order: Order,
@@ -108,7 +106,8 @@ impl DutchAuctionCalculator {
         let current_price = self.calc_price(start_time, end_time, start_price, end_price);
 
         // Generate order hash
-        let order_hash = self.hash_order(&order);
+        let order_hash = &order.hash_order();
+        let order_hash2 = order_hash.clone();
 
         // Calculate time progress percentage
         let current_time = env::block_timestamp() / 1_000_000; // in ms
@@ -128,9 +127,47 @@ impl DutchAuctionCalculator {
 
         PriceInfo {
             current_price,
-            order_hash,
+            order_hash: order_hash2,
             time_elapsed_percent,
             is_active,
+        }
+    }
+
+    /// Fill an order at the current Dutch auction price
+    /// Returns the filled order information including the price and taker
+    pub fn fill_order(
+        &mut self,
+        order: Order,
+        taker: AccountId,
+        start_time: u64,
+        end_time: u64,
+        start_price: U128,
+        end_price: U128,
+    ) -> FilledOrderInfo {
+        // Calculate current price based on the auction parameters
+        let current_price = self.calc_price(start_time, end_time, start_price, end_price);
+
+        // Generate order hash for tracking
+        let order_hash = &order.hash_order();
+        let order_hash2 = order_hash.clone();
+
+        // Get current timestamp
+        let current_time = env::block_timestamp() / 1_000_000; // in ms
+
+        // Ensure auction is still active
+        require!(
+            (current_time as u64) < end_time,
+            "Auction has already ended"
+        );
+        // We could also handle the partial fills here itself. 
+        FilledOrderInfo {
+            order_hash: order_hash2,
+            maker: order.maker,
+            taker,
+            maker_asset: order.maker_asset,
+            making_amount: order.making_amount,
+            fill_price: current_price,
+            fill_time: U128(current_time as u128),
         }
     }
 }
