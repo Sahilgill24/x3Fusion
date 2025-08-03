@@ -12,7 +12,7 @@ These are the contract addresses for the relevant chains.
 ```plaintext
 
 Near Escrow Factory: escrowfac22.testnet
-Near Dutch Auction: Dutchauction22.testnet
+Near Dutch Auction: dutchauction22.testnet
 Tezos Escrow Factory: KT18g1YSPAy9dTehdPVaAfSuESvP3p27HeQs
 Tezos Escrow Ex: KT1D9qehRdgVzEv1FgPNESB1DnxdekSdNbHN
 EVM Escrow Factory: 0x49ae5957c37f993667c676dcfad35cfAa9Fbc563
