@@ -58,13 +58,13 @@ async function withdraw(contractAddress, secret) {
 
 
 async function example() {
-    const contractAddress = "KT1KWQF6qz9cZNxFJwT1Hqf2xHuupYbZpJeF";
+    const contractAddress = "KT1GgpmpC8fvnBrTMCP775p7n1rvGd5ErSDk";
     // KT1Uko3geJLiW2Dx5UHrGJG5g2po9z4Novwh
     //Initialize escrow
     await initializeEscrow(contractAddress, {
         orderHash: "0x001234567890abcdef",
         hashlock: "0xa665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3", // SHA256 of "123" - correct hash
-        makerAddress: "tz1fUef6TuMmNUaHTwT3rYxdAgABCPEpZpD6",
+        makerAddress: "tz1a4XeitzFQL5kKXtEYdC7ptmPWJwDD12XN",
         takerAddress: "0x6F1859694601891B7ED021c3Fefd390AB776d5C0",
         amount: 1.0, // 1 XTZ
         safetyDeposit: 0.1 // 0.1 XTZ

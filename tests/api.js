@@ -91,8 +91,8 @@ app.post('/deploy/evm', async (req, res) => {
         const order = {
             orderHash: orderHash || ethers.keccak256(ethers.toUtf8Bytes('unique_order_123')),
             hashlock: hashlock,
-            maker: maker || '0x6F1859694601891B7ED021c3Fefd390AB776d5C0',
-            taker: taker || '0xdC9ab498f858c3fd7A241C1B1F326E64586B4Fce',
+            maker: maker || '0xdC9ab498f858c3fd7A241C1B1F326E64586B4Fce',
+            taker: taker || '0x6F1859694601891B7ED021c3Fefd390AB776d5C0',
             token: token || '0x0000000000000000000000000000000000000000',
             amount: ethers.parseEther(amount || '0.001'),
             safetyDeposit: ethers.parseEther(safetyDeposit || '0.0001'),
@@ -251,12 +251,12 @@ app.post('/deploy/tezos', async (req, res) => {
             signer: await InMemorySigner.fromSecretKey('edskSApXsFmrqD7HvgZWoGHnSso1szmg4NYjwS8Mmx2ripVt9dhFzvmqozEyBgTUD9vRAQMQv7uu7YaoWMG1sBMmcsfW1zvBU3')
         });
         // KT1KWQF6qz9cZNxFJwT1Hqf2xHuupYbZpJeF new one 
-        const contract = await tezos.contract.at('KT1KWQF6qz9cZNxFJwT1Hqf2xHuupYbZpJeF');
+        const contract = await tezos.contract.at('KT1D9qehRdgVzEv1FgPNESB1DnxdekSdNbHN');
         const hash = ethers.sha256(ethers.toUtf8Bytes(secret));
         // Use exact same parameters as tezos.js
         // maker's tezos address needed here. 
         const initParams = {
-            order_hash: stringToBytes(orderHash || "0x001234567890abcdef"),
+            order_hash: stringToBytes("0x001234567890abcdef"),
             hashlock: hash || "0xa665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
             maker: maker || "tz1a4XeitzFQL5kKXtEYdC7ptmPWJwDD12XN",
             taker_address: takerAddress || "0x6F1859694601891B7ED021c3Fefd390AB776d5C0",
@@ -282,7 +282,8 @@ app.post('/deploy/tezos', async (req, res) => {
         res.json({
             success: true,
             network: 'Tezos',
-            secret: secret || "123", // From tezos.js
+            secret: secret || "123",
+            EscrowAddress: 'KT1D9qehRdgVzEv1FgPNESB1DnxdekSdNbHN',
             initTransaction: {
                 hash: initResult.hash,
                 confirmation: initConfirmation
@@ -530,7 +531,7 @@ app.post('/withdraw/tezos', async (req, res) => {
             signer: await InMemorySigner.fromSecretKey('edskSApXsFmrqD7HvgZWoGHnSso1szmg4NYjwS8Mmx2ripVt9dhFzvmqozEyBgTUD9vRAQMQv7uu7YaoWMG1sBMmcsfW1zvBU3')
         });
         // Use exact same function call as tezos.js
-        const contract = await tezos.contract.at(contractAddress || 'KT1KWQF6qz9cZNxFJwT1Hqf2xHuupYbZpJeF');
+        const contract = await tezos.contract.at(contractAddress || 'KT1D9qehRdgVzEv1FgPNESB1DnxdekSdNbHN');
         const secretBytes = stringToBytes(secret || "123");
         const result = await contract.methodsObject.withdraw(secretBytes).send();
         const confirmation = await result.confirmation();
@@ -538,7 +539,7 @@ app.post('/withdraw/tezos', async (req, res) => {
         res.json({
             success: true,
             network: 'Tezos',
-            contractAddress: contractAddress || 'KT1KWQF6qz9cZNxFJwT1Hqf2xHuupYbZpJeF',
+            contractAddress: contractAddress || 'KT1D9qehRdgVzEv1FgPNESB1DnxdekSdNbHN',
             transactionHash: result.hash,
             confirmation,
             secret: secret || "123"
