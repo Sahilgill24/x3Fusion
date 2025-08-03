@@ -65,23 +65,7 @@ X3Fusion’s cross-chain swap logic is built on three specialized on-chain modul
 
 <img src='./images/api.png'>
 
-
-```plaintext
-// Auction
-POST /auction/start       – Create new Dutch-auction order
-POST /auction/fillOrder   – Fill an existing auction order
-
-// Deployment
-POST /deploy/evm          – Deploy EVM escrow contract
-POST /deploy/near         – Deploy NEAR escrow contract
-POST /deploy/tezos        – Deploy Tezos escrow contract
-
-// Withdrawal
-POST /withdraw/evm        – Withdraw from EVM escrow
-POST /withdraw/near       – Withdraw from NEAR escrow
-POST /withdraw/tezos      – Withdraw from Tezos escrow
-
-```
+> The `SwapPage.tsx` file is the one that manages the API's and acts as the resolver. 
 
 ## Future Enhancements
 -- **Merkle Tree Secret Resolution**: Implement a Merkle-tree-of-secrets scheme to allow efficient, secure partial fills without exposing all preimages at once. Participants can prove knowledge of specific leaf preimages, preserving confidentiality and enabling granular withdrawals.
