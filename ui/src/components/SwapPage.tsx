@@ -39,6 +39,7 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
     const [showPayDropdown, setShowPayDropdown] = useState(false);
     const [showReceiveDropdown, setShowReceiveDropdown] = useState(false);
     const [isSwapping, setIsSwapping] = useState(false);
+    const [escrowdeployed, setEscrowDeployed] = useState(false);
 
     const minAmountReceived = 0.01245257;
 
@@ -54,7 +55,7 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
         };
         return rates[`${from}-${to}`] || 1;
     };
-
+    const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
     // Close dropdowns when clicking outside
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -97,18 +98,21 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
         setShowReceiveDropdown(false);
     };
 
-    const deployEvmEscrow = async (secret: String) => {
-        console.log('Deploying EVM Escrow with secret:', secret);
-        const resp = await axios.post(`${API_URL}/deploy/evm`, {
+    const deployEvmEscrow = async (secret: string): Promise<string> => {
+        const { data } = await axios.post(`${API_URL}/deploy/evm`, { secret });
+        setEvmescrowaddress(data.escrowAddress);
+        return data.escrowAddress;
+    };
+
+    const deployNearEscrow = async (secret: string): Promise<string> => {
+        const { data } = await axios.post(`${API_URL}/deploy/near`, {
+            uniqueName: 'x3fusionbackup5',
             secret,
-        })
-
-        console.log(resp.data);
-        console.log('EVM Escrow deployed successfully');
-        console.log('escrowAddress:', resp.data.escrowAddress);
-        setEvmescrowaddress(resp.data.escrowAddress);
-
-    }
+            maker: destaddress
+        });
+        setNearContractId(data.contractName);
+        return data.contractName;
+    };
 
     const deployTezosEscrow = async (secret: String) => {
         const resp = await axios.post(`${API_URL}/deploy/tezos`, {
@@ -120,18 +124,7 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
 
     }
 
-    const deployNearEscrow = async (secret: String) => {
-        const resp = await axios.post(`${API_URL}/deploy/near`, {
-            uniqueName: 'x3fusionbackup1',
-            secret,
-            maker: destaddress
-        })
 
-        console.log(resp.data);
-        setNearContractId(resp.data.contractName);
-        console.log('Near Escrow deployed successfully', resp.data.contractName);
-
-    }
     const withdrawEvmEscrow = async (escrowAddress: String, secret: String) => {
         const resp = await axios.post(`${API_URL}/withdraw/evm`, {
             escrowAddress,
@@ -141,9 +134,9 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
         console.log(resp.data);
     }
 
-    const withdrawNearEscrow = async (contractId: String, secret: String) => {
+    const withdrawNearEscrow = async (nearcontractId: String, secret: String) => {
         const resp = await axios.post(`${API_URL}/withdraw/near`, {
-            contractId: contractId,
+            contractId: nearcontractId,
             secret: secret,
         })
 
@@ -178,7 +171,15 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
 
         console.log('Withdrawing from Near and EVM Escrows');
         // Withdraw from Near and EVM Escrows
-        setTimeout(() => { }, 15000);
+        //await delay(10000); // Simulate Near finality delay
+
+        setEscrowDeployed(true);
+
+
+    }
+
+    async function withdrawlbegin() {
+        await withdrawNearEscrow(nearcontractId, secret);
         //await withdrawNearEscrow(nearcontractId, secret);
         console.log('Near Escrow withdrawn Successfully');
         await withdrawEvmEscrow(evmescrowaddress, secret);
@@ -189,27 +190,31 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
         console.log('Starting EVM to Tezos swap...');
 
         // Deploy EVM Escrow
-        //await deployEvmEscrow(secret);
+        await deployEvmEscrow(secret);
         console.log('EVM Escrow deployed Successfully:', evmescrowaddress);
 
         // Deploy Tezos Escrow
-        //await deployTezosEscrow(secret);
+        await deployTezosEscrow(secret);
         console.log('Tezos Escrow deployed Successfully');
 
         // Wait for finality (EVM has faster finality than Tezos)
-        console.log('Waiting for finality and withdrawing from escrows...');
-        setTimeout(() => { }, 3000); // 15 seconds for Tezos finality
 
-        // Withdraw from Tezos and EVM Escrows
-        //await withdrawTezosEscrow(secret);
+    }
+
+    const withdrawlbegin2 = async () => {
+        console.log('Waiting for finality and withdrawing from escrows...');
+
+        await withdrawTezosEscrow(secret);
+        await withdrawEvmEscrow(evmescrowaddress, secret);
+        // 15 seconds for Tezos finality
+
         console.log('Tezos Escrow withdrawn Successfully');
 
-        await withdrawEvmEscrow(evmescrowaddress, secret);
+
         console.log('EVM Escrow withdrawn Successfully');
 
         console.log('EVM to Tezos swap completed successfully!');
     }
-
 
     const executeSwap = async () => {
         const fromChain = payToken.symbol;
@@ -242,6 +247,15 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
         }
     };
 
+    const executeWithdraw = async () => {
+        const fromChain = payToken.symbol;
+        const toChain = receiveToken.symbol;
+        if (fromChain === 'ETH' && toChain === 'NEAR') {
+            await withdrawlbegin();
+        } else if (fromChain === 'ETH' && toChain === 'TEZOS') {
+            await withdrawlbegin2();
+        }
+    }
     const handlePayAmountChange = (value: string) => {
         setPayAmount(value);
         if (value) {
@@ -470,6 +484,9 @@ const SwapPage = ({ onNavigateHome }: SwapPageProps) => {
                                 : 'Enter Secret and Destination Address to Continue'
                             )
                         }
+                    </button>
+                    <button className="swap-button" disabled={!escrowdeployed} onClick={() => executeWithdraw()}>
+                        Withdraw
                     </button>
                 </div>
             </div>
