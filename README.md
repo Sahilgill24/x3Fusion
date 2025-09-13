@@ -3,6 +3,9 @@
 
 <center><img src='./images/x3Fusion.png' height='150' width='150'></center>
 
+> This Project won the <a href='https://ethglobal.com/showcase/x3fusion-w3roo'>1st Prize</a> in the Near Track of ETHGlobal Unite-Defi Hackathon
+
+
 > X3Fusion is a cross-chain swap extension built on top of the 1inch Fusion+ framework, enabling seamless, trustless atomic swaps between Ethereum, NEAR, and Tezos. By combining on-chain HTLC logic, dynamic factory patterns, and an off-chain resolver API, X3Fusion abstracts away network-specific complexities and delivers a unified developer experience for building robust cross-chain applications.
 
 ## Features
